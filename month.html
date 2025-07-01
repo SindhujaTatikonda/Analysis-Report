@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monthly Report Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgb(252, 252, 252);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center; 
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.03) 10px,
+                rgba(255, 255, 255, 0.03) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex: 1;
+            justify-content: space-between;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+        }
+
+        .filter-select, .month-input {
+            padding: 12px 16px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+
+        .filter-select:focus, .month-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .report-content {
+            padding: 30px;
+        }
+
+        .employee-section {
+            margin-bottom: 40px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .employee-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .employee-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .employee-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .employee-info p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .month-info {
+            text-align: right;
+        }
+
+        .month-info .month-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .month-info .month-date {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            background: white;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .table-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .report-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            font-weight: 600;
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .report-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: top;
+            transition: background-color 0.2s ease;
+        }
+
+        .report-table tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-pending {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .project-status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .project-active {
+            background: #28a745;
+            color: white;
+        }
+
+        .project-review {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .project-completed {
+            background: #6c757d;
+            color: white;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tech-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .hours-cell {
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .date-cell {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 100px;
+        }
+
+        .activity-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .description-cell {
+            max-width: 250px;
+            line-height: 1.4;
+            color: #6c757d;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #495057;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                justify-content: center;
+            }
+
+            .filter-select, .month-input {
+                width: 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .employee-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .month-info {
+                text-align: center;
+            }
+
+            .report-table {
+                font-size: 12px;
+            }
+
+            .report-table th,
+            .report-table td {
+                padding: 8px 6px;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .no-data-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 16px;
+            margin: 20px 0;
+            border: 1px solid #ffeea7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .status-select {
+            padding: 6px;
+            border-radius: 5px;
+            border: 2px solid #dee2e6;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .status-select option[value="Completed"] {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-select option[value="In Progress"] {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-select option[value="Pending"] {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Monthly Report Management System</h1>
+            <p>Track progress, monitor activities, and manage team productivity</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="employeeId">Employee ID:</label>
+                <input type="text" id="employeeId" class="filter-select" placeholder="Enter Employee ID">
+                <label for="employeeName">Employee Name:</label>
+                <input type="text" id="employeeName" class="filter-select" placeholder="Enter Employee Name" readonly>
+                <label for="monthSelect">Month:</label>
+                <input type="month" id="monthSelect" class="month-input">
+                <button id="generateReport" class="generate-btn">Generate Report</button>
+            </div>
+        </div>
+
+        <div class="report-content">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading reports...</p>
+            </div>
+            <div id="reportContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for demonstration with Employee IDs (June and May 2025 for E003)
+        const reportData = {
+            'E001': {
+                id: 'E001',
+                name: 'John Doe',
+                manager: 'Alice Smith',
+                reports: [
+                    {
+                        date: '2025-06-02',
+                        project: 'E-Commerce Platform',
+                        activity: 'Frontend Development',
+                        type: 'Development',
+                        description: 'Developed product listing page with pagination',
+                        technologies: ['React', 'TypeScript'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Feature deployed successfully'
+                    },
+                    {
+                        date: '2025-06-03',
+                        project: 'E-Commerce Platform',
+                        activity: 'API Integration',
+                        type: 'Development',
+                        description: 'Integrated search API for product filtering',
+                        technologies: ['React', 'Axios'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Search functionality working as expected'
+                    },
+                    {
+                        date: '2025-06-04',
+                        project: 'Admin Dashboard',
+                        activity: 'UI Implementation',
+                        type: 'Development',
+                        description: 'Created admin panel layout',
+                        technologies: ['React', 'Material-UI'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'Awaiting client feedback'
+                    },
+                    {
+                        date: '2025-06-05',
+                        project: 'Admin Dashboard',
+                        activity: 'Data Visualization',
+                        type: 'Development',
+                        description: 'Implemented sales charts',
+                        technologies: ['Chart.js', 'React'],
+                        hoursSpent: 6,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'Charts rendered correctly'
+                    },
+                    {
+                        date: '2025-06-06',
+                        project: 'E-Commerce Platform',
+                        activity: 'Testing',
+                        type: 'Testing',
+                        description: 'Performed unit testing on frontend components',
+                        technologies: ['Jest', 'React Testing Library'],
+                        hoursSpent: 7,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: '90% test coverage achieved'
+                    },
+                    {
+                        date: '2025-06-09',
+                        project: 'E-Commerce Platform',
+                        activity: 'Performance Optimization',
+                        type: 'Optimization',
+                        description: 'Optimized image loading with lazy loading',
+                        technologies: ['React', 'Intersection Observer'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Page load time improved by 30%'
+                    },
+                    {
+                        date: '2025-06-10',
+                        project: 'Admin Dashboard',
+                        activity: 'Backend Integration',
+                        type: 'Development',
+                        description: 'Connected dashboard to REST APIs',
+                        technologies: ['React', 'Axios'],
+                        hoursSpent: 7,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'API integration in progress'
+                    }
+                ]
+            },
+            'E002': {
+                id: 'E002',
+                name: 'Sarah Johnson',
+                manager: 'Robert Brown',
+                reports: [
+                    {
+                        date: '2025-06-02',
+                        project: 'Mobile App Development',
+                        activity: 'UI/UX Design',
+                        type: 'Design',
+                        description: 'Designed user profile screens',
+                        technologies: ['Figma', 'Adobe XD'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Designs approved'
+                    },
+                    {
+                        date: '2025-06-03',
+                        project: 'Mobile App Development',
+                        activity: 'React Native Coding',
+                        type: 'Development',
+                        description: 'Implemented user profile functionality',
+                        technologies: ['React Native', 'Firebase'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Profile features working'
+                    },
+                    {
+                        date: '2025-06-04',
+                        project: 'API Development',
+                        activity: 'Backend Services',
+                        type: 'Development',
+                        description: 'Developed user authentication APIs',
+                        technologies: ['Node.js', 'Express'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'APIs tested and documented'
+                    },
+                    {
+                        date: '2025-06-05',
+                        project: 'Mobile App Development',
+                        activity: 'Navigation Setup',
+                        type: 'Development',
+                        description: 'Set up app navigation structure',
+                        technologies: ['React Navigation'],
+                        hoursSpent: 6,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Navigation partially complete'
+                    },
+                    {
+                        date: '2025-06-06',
+                        project: 'API Development',
+                        activity: 'Database Design',
+                        type: 'Development',
+                        description: 'Designed database schema for user data',
+                        technologies: ['MongoDB', 'Mongoose'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Schema approved'
+                    },
+                    {
+                        date: '2025-06-09',
+                        project: 'Mobile App Development',
+                        activity: 'Push Notifications',
+                        type: 'Development',
+                        description: 'Integrated push notification service',
+                        technologies: ['React Native', 'Firebase'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Testing notification delivery'
+                    },
+                    {
+                        date: '2025-06-10',
+                        project: 'API Development',
+                        activity: 'Performance Tuning',
+                        type: 'Optimization',
+                        description: 'Optimized API response times',
+                        technologies: ['Node.js', 'Redis'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Response time reduced by 25%'
+                    }
+                ]
+            },
+            'E003': {
+                id: 'E003',
+                name: 'Mike Chen',
+                manager: 'Lisa Wang',
+                reports: [
+                    // May 2025 Reports (Weekdays only: May 1 was a Thursday, May 31 was a Saturday, 22 weekdays total)
+                    {
+                        date: '2025-05-01',
+                        project: 'Data Analytics Platform',
+                        activity: 'ETL Pipeline Development',
+                        type: 'Development',
+                        description: 'Initiated new ETL pipeline for real-time data processing',
+                        technologies: ['Python', 'Apache Airflow'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Pipeline setup completed'
+                    },
+                    {
+                        date: '2025-05-02',
+                        project: 'Data Analytics Platform',
+                        activity: 'Data Modeling',
+                        type: 'Development',
+                        description: 'Designed data models for customer analytics',
+                        technologies: ['Python', 'Pandas'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Models validated by team'
+                    },
+                    {
+                        date: '2025-05-05',
+                        project: 'Data Visualization',
+                        activity: 'Dashboard Design',
+                        type: 'Development',
+                        description: 'Created interactive sales dashboard prototype',
+                        technologies: ['Tableau', 'D3.js'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'Awaiting stakeholder feedback'
+                    },
+                    {
+                        date: '2025-05-06',
+                        project: 'Cloud Migration',
+                        activity: 'Infrastructure Planning',
+                        type: 'DevOps',
+                        description: 'Planned AWS migration strategy for analytics platform',
+                        technologies: ['AWS', 'Terraform'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Migration plan approved'
+                    },
+                    {
+                        date: '2025-05-07',
+                        project: 'Data Analytics Platform',
+                        activity: 'ML Model Training',
+                        type: 'Development',
+                        description: 'Trained predictive model for customer churn',
+                        technologies: ['Python', 'Scikit-learn'],
+                        hoursSpent: 9,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Model accuracy at 89%'
+                    },
+                    {
+                        date: '2025-05-08',
+                        project: 'Data Visualization',
+                        activity: 'Chart Optimization',
+                        type: 'Development',
+                        description: 'Optimized chart rendering for large datasets',
+                        technologies: ['D3.js', 'React'],
+                        hoursSpent: 6,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Rendering time reduced by 20%'
+                    },
+                    {
+                        date: '2025-05-09',
+                        project: 'Cloud Migration',
+                        activity: 'Container Setup',
+                        type: 'DevOps',
+                        description: 'Set up Docker containers for analytics services',
+                        technologies: ['Docker', 'Kubernetes'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Containerization 80% complete'
+                    },
+                    {
+                        date: '2025-05-12',
+                        project: 'Data Analytics Platform',
+                        activity: 'API Development',
+                        type: 'Development',
+                        description: 'Developed REST APIs for data access',
+                        technologies: ['Python', 'FastAPI'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'APIs deployed and tested'
+                    },
+                    {
+                        date: '2025-05-13',
+                        project: 'Data Analytics Platform',
+                        activity: 'Database Optimization',
+                        type: 'Optimization',
+                        description: 'Optimized PostgreSQL queries for analytics',
+                        technologies: ['PostgreSQL', 'Python'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Query performance improved by 30%'
+                    },
+                    {
+                        date: '2025-05-14',
+                        project: 'Cloud Migration',
+                        activity: 'Security Configuration',
+                        type: 'DevOps',
+                        description: 'Configured IAM roles and policies on AWS',
+                        technologies: ['AWS', 'Terraform'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Security setup completed'
+                    },
+                    {
+                        date: '2025-05-15',
+                        project: 'Data Visualization',
+                        activity: 'Dashboard Testing',
+                        type: 'Testing',
+                        description: 'Tested dashboard responsiveness across devices',
+                        technologies: ['Tableau', 'React'],
+                        hoursSpent: 6,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'Minor issues identified'
+                    },
+                    {
+                        date: '2025-05-16',
+                        project: 'Data Analytics Platform',
+                        activity: 'Feature Engineering',
+                        type: 'Development',
+                        description: 'Developed new features for ML models',
+                        technologies: ['Python', 'Pandas'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Features added successfully'
+                    },
+                    {
+                        date: '2025-05-19',
+                        project: 'Cloud Migration',
+                        activity: 'Data Migration',
+                        type: 'DevOps',
+                        description: 'Migrated historical data to AWS RDS',
+                        technologies: ['AWS', 'PostgreSQL'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Migration 70% complete'
+                    },
+                    {
+                        date: '2025-05-20',
+                        project: 'Data Analytics Platform',
+                        activity: 'Model Deployment',
+                        type: 'Development',
+                        description: 'Deployed ML model to production',
+                        technologies: ['Python', 'AWS SageMaker'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Model live in production'
+                    },
+                    {
+                        date: '2025-05-21',
+                        project: 'Data Visualization',
+                        activity: 'UI Enhancements',
+                        type: 'Development',
+                        description: 'Improved dashboard UI based on feedback',
+                        technologies: ['React', 'D3.js'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'UI updates approved'
+                    },
+                    {
+                        date: '2025-05-22',
+                        project: 'Cloud Migration',
+                        activity: 'Performance Testing',
+                        type: 'Testing',
+                        description: 'Conducted load testing on cloud infrastructure',
+                        technologies: ['AWS', 'Locust'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Testing in progress'
+                    },
+                    {
+                        date: '2025-05-23',
+                        project: 'Data Analytics Platform',
+                        activity: 'Data Validation',
+                        type: 'Development',
+                        description: 'Validated data integrity post-migration',
+                        technologies: ['Python', 'PostgreSQL'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Data integrity confirmed'
+                    },
+                    {
+                        date: '2025-05-26',
+                        project: 'Cloud Migration',
+                        activity: 'Monitoring Setup',
+                        type: 'DevOps',
+                        description: 'Set up CloudWatch monitoring for analytics platform',
+                        technologies: ['AWS CloudWatch', 'Terraform'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Monitoring operational'
+                    },
+                    {
+                        date: '2025-05-27',
+                        project: 'Data Analytics Platform',
+                        activity: 'Report Generation',
+                        type: 'Development',
+                        description: 'Developed automated reporting system',
+                        technologies: ['Python', 'Tableau'],
+                        hoursSpent: 7,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Report system in testing'
+                    },
+                    {
+                        date: '2025-05-28',
+                        project: 'Data Visualization',
+                        activity: 'Mobile Optimization',
+                        type: 'Development',
+                        description: 'Optimized dashboards for mobile devices',
+                        technologies: ['React', 'Tableau'],
+                        hoursSpent: 6,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'Mobile version approved'
+                    },
+                    {
+                        date: '2025-05-29',
+                        project: 'Cloud Migration',
+                        activity: 'Backup Configuration',
+                        type: 'DevOps',
+                        description: 'Configured automated backups for AWS RDS',
+                        technologies: ['AWS', 'Terraform'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Backup system operational'
+                    },
+                    {
+                        date: '2025-05-30',
+                        project: 'Data Analytics Platform',
+                        activity: 'Documentation',
+                        type: 'Documentation',
+                        description: 'Documented analytics platform architecture',
+                        technologies: ['Confluence', 'Markdown'],
+                        hoursSpent: 6,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Documentation complete'
+                    },
+                    // June 2025 Reports
+                    {
+                        date: '2025-06-02',
+                        project: 'Data Analytics Platform',
+                        activity: 'ETL Pipeline',
+                        type: 'Development',
+                        description: 'Built data extraction pipeline',
+                        technologies: ['Python', 'Airflow'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Pipeline operational'
+                    },
+                    {
+                        date: '2025-06-03',
+                        project: 'Data Analytics Platform',
+                        activity: 'ML Model Development',
+                        type: 'Development',
+                        description: 'Trained predictive model',
+                        technologies: ['Python', 'Scikit-learn'],
+                        hoursSpent: 9,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Model accuracy at 90%'
+                    },
+                    {
+                        date: '2025-06-04',
+                        project: 'Data Visualization',
+                        activity: 'Dashboard Creation',
+                        type: 'Development',
+                        description: 'Developed BI dashboards',
+                        technologies: ['Tableau', 'React'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'Dashboards ready for review'
+                    },
+                    {
+                        date: '2025-06-05',
+                        project: 'Cloud Migration',
+                        activity: 'Infrastructure Setup',
+                        type: 'DevOps',
+                        description: 'Set up AWS infrastructure',
+                        technologies: ['AWS', 'Docker'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Migration 60% complete'
+                    },
+                    {
+                        date: '2025-06-06',
+                        project: 'Data Analytics Platform',
+                        activity: 'Data Cleaning',
+                        type: 'Development',
+                        description: 'Cleaned and processed datasets',
+                        technologies: ['Python', 'Pandas'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Data quality improved'
+                    },
+                    {
+                        date: '2025-06-09',
+                        project: 'Cloud Migration',
+                        activity: 'Container Orchestration',
+                        type: 'DevOps',
+                        description: 'Set up Kubernetes clusters',
+                        technologies: ['Kubernetes', 'Docker'],
+                        hoursSpent: 8,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Clusters being tested'
+                    },
+                    {
+                        date: '2025-06-10',
+                        project: 'Data Analytics Platform',
+                        activity: 'API Development',
+                        type: 'Development',
+                        description: 'Developed analytics APIs',
+                        technologies: ['Python', 'FastAPI'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'APIs deployed'
+                    }
+                ]
+            }
+        };
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMonthSelector();
+            setupEventListeners();
+            showInitialMessage();
+        });
+
+        function showInitialMessage() {
+            const container = document.getElementById('reportContainer');
+            container.innerHTML = `
+                <div class="no-data-message">
+                    <h3>Welcome to Monthly Report System</h3>
+                    <p>Enter an Employee ID, select a month, and click "Generate Report" to view monthly reports.</p>
+                    <p><strong>Available Employee IDs:</strong> E001, E002, E003</p>
+                </div>
+            `;
+        }
+
+        function initializeMonthSelector() {
+            const monthSelect = document.getElementById('monthSelect');
+            const today = new Date();
+            const currentYear = today.getFullYear();
+            const currentMonth = (today.getMonth() + 1).toString().padStart(2, '0');
+            monthSelect.value = `${currentYear}-${currentMonth}`;
+        }
+
+        function setupEventListeners() {
+            const employeeIdInput = document.getElementById('employeeId');
+            const employeeNameInput = document.getElementById('employeeName');
+            const generateBtn = document.getElementById('generateReport');
+            
+            employeeIdInput.addEventListener('input', function() {
+                const employeeId = this.value.trim().toUpperCase();
+                if (employeeId && reportData[employeeId]) {
+                    employeeNameInput.value = reportData[employeeId].name;
+                } else {
+                    employeeNameInput.value = '';
+                }
+            });
+            
+            generateBtn.addEventListener('click', generateReport);
+            
+            employeeIdInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    generateReport();
+                }
+            });
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('reportContainer').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('reportContainer').style.display = 'block';
+        }
+
+        function generateReport() {
+            const employeeId = document.getElementById('employeeId').value.trim().toUpperCase();
+            const monthSelect = document.getElementById('monthSelect').value;
+            const container = document.getElementById('reportContainer');
+            
+            if (!employeeId) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> Please enter an Employee ID
+                    </div>
+                `;
+                return;
+            }
+            
+            if (!monthSelect) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> Please select a month
+                    </div>
+                `;
+                return;
+            }
+            
+            if (!reportData[employeeId]) {
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> Employee ID "${employeeId}" not found<br>
+                        <small>Available IDs: E001, E002, E003</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            showLoading();
+            
+            setTimeout(() => {
+                const employee = reportData[employeeId];
+                const reportHtml = generateEmployeeReport(employeeId, employee, monthSelect);
+                container.innerHTML = reportHtml;
+                setupStatusChangeListeners(employeeId);
+                hideLoading();
+            }, 800);
+        }
+
+        function setupStatusChangeListeners(employeeId) {
+            const statusSelects = document.querySelectorAll('.status-select');
+            statusSelects.forEach((select, index) => {
+                select.addEventListener('change', function() {
+                    reportData[employeeId].reports[index].status = this.value;
+                    const monthSelect = document.getElementById('monthSelect').value;
+                    const employee = reportData[employeeId];
+                    const reportHtml = generateEmployeeReport(employeeId, employee, monthSelect);
+                    document.getElementById('reportContainer').innerHTML = reportHtml;
+                    setupStatusChangeListeners(employeeId);
+                });
+            });
+        }
+
+        function generateEmployeeReport(employeeId, employee, selectedMonth) {
+            const [year, month] = selectedMonth.split('-').map(num => parseInt(num));
+            const monthStart = new Date(year, month - 1, 1);
+            const monthEnd = new Date(year, month, 0);
+            const monthStartStr = monthStart.toLocaleDateString();
+            const monthEndStr = monthEnd.toLocaleDateString();
+            
+            let totalHours = 0;
+            let completedTasks = 0;
+            let inProgressTasks = 0;
+            let pendingTasks = 0;
+            
+            // Filter reports to include only weekdays (Monday to Friday)
+            const tableRows = employee.reports
+                .filter(report => {
+                    const reportDate = new Date(report.date);
+                    const reportMonth = reportDate.getMonth() + 1;
+                    const reportYear = reportDate.getFullYear();
+                    const dayOfWeek = reportDate.getDay();
+                    return reportYear === year && 
+                           reportMonth === month && 
+                           dayOfWeek >= 1 && dayOfWeek <= 5;
+                })
+                .map((report, index) => {
+                    totalHours += report.hoursSpent;
+                    if (report.status === 'Completed') completedTasks++;
+                    else if (report.status === 'In Progress') inProgressTasks++;
+                    else if (report.status === 'Pending') pendingTasks++;
+                    
+                    return `
+                        <tr>
+                            <td class="date-cell">${new Date(report.date).toLocaleDateString()}</td>
+                            <td><strong>${report.project}</strong></td>
+                            <td>${employee.manager}</td>
+                            <td class="activity-cell">${report.activity}</td>
+                            <td>${report.type}</td>
+                            <td class="description-cell">${report.description}</td>
+                            <td>
+                                <div class="tech-tags">
+                                    ${report.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                                </div>
+                            </td>
+                            <td class="hours-cell">${report.hoursSpent}h</td>
+                            <td>
+                                <select class="status-select" data-index="${index}">
+                                    <option value="Completed" ${report.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                    <option value="In Progress" ${report.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                    <option value="Pending" ${report.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                </select>
+                            </td>
+                            <td><span class="project-status-badge project-${report.projectStatus.toLowerCase()}">${report.projectStatus}</span></td>
+                            <td>${report.remarks}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+            return `
+                <div class="employee-section">
+                    <div class="employee-header">
+                        <div class="employee-info">
+                            <h3>${employee.name}</h3>
+                            <p>Reporting Manager: ${employee.manager}</p>
+                        </div>
+                        <div class="month-info">
+                            <div class="month-label">Month Period</div>
+                            <div class="month-date">${monthStartStr} - ${monthEndStr}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="table-container">
+                        <table class="report-table">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Project</th>
+                                    <th>Reporting Manager</th>
+                                    <th>Activity</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Technologies</th>
+                                    <th>Hours Spent</th>
+                                    <th>Status</th>
+                                    <th>Project Status</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${tableRows}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="summary-card">
+                        <h4>Monthly Summary for ${employee.name}</h4>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <div class="stat-value">${totalHours}</div>
+                                <div class="stat-label">Total Hours</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${completedTasks}</div>
+                                <div class="stat-label">Completed</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${inProgressTasks}</div>
+                                <div class="stat-label">In Progress</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">${pendingTasks}</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

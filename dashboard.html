@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Performance Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            --secondary-gradient: linear-gradient(135deg, #60a5fa 0%, #2563eb 100%);
+            --accent-gradient: linear-gradient(135deg, #93c5fd 0%, #3b82f6 100%);
+            --dark-gradient: linear-gradient(135deg, #1f2937 0%, #4b5563 100%);
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --text-primary: #1f2937;
+            --text-secondary: #6b7280;
+            --bg-primary: #f9fafb;
+            --bg-secondary: #ffffff;
+            --shadow-light: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-medium: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-heavy: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            overflow-y: hidden;
+        }
+
+        .dashboard-wrapper {
+            display: flex;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 230px;
+            border-right: 1px solid var(--glass-border);
+            color: var(--text-primary);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-heavy);
+            scrollbar-width: none; /* Firefox */
+            overflow-x: hidden;
+        }
+
+        .sidebar::-webkit-scrollbar {
+            display: none; /* Webkit browsers */
+        }
+
+        .sidebar-header {
+            padding: 10px; /* Reduced padding to minimize space */
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+        }
+
+        .logo-container {
+            background: whitesmoke;
+            padding: 5px; /* Reduced padding */
+            border-radius: 8px;
+            box-shadow: whitesmoke;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container:hover {
+            transform: scale(1.05);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .company-logo {
+            width: 250px; 
+            height: 60px; 
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .sidebar-nav {
+            padding: 20px 0;
+        }
+
+        .nav-section {
+            padding: 20px 20px 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .nav-section::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 14px 20px;
+            color: var(--text-primary);
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border-radius: 0 25px 25px 0;
+            margin: 2px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--accent-gradient);
+            transform: scaleY(0);
+            transition: transform 0.3s ease;
+        }
+
+        .nav-item:hover::before,
+        .nav-item.active::before {
+            transform: scaleY(1);
+        }
+
+        .nav-item:hover,
+        .nav-item.active {
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+            transform: translateX(8px);
+            box-shadow: var(--shadow-light);
+        }
+
+        .nav-item i {
+            width: 20px;
+            margin-right: 14px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .nav-item .nav-badge {
+            margin-left: auto;
+            background: var(--secondary-gradient);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 7px;
+            border-radius: 12px;
+            font-weight: 600;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 230px;
+            min-height: 100vh;
+            transition: margin-left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .top-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px 30px;
+            box-shadow: var(--shadow-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .page-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: var(--primary-gradient);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+            display: inline-block;
+        }
+
+        .page-subtitle {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .top-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .action-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+            box-shadow: var(--shadow-light);
+        }
+
+        .action-btn:hover {
+            background: var(--accent-gradient);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-medium);
+        }
+
+        .action-btn .notification-badge {
+            position: absolute;
+            top: 7px;
+            right: 7px;
+            width: 7px;
+            height: 7px;
+            background: #ef4444;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 18px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 16px;
+            box-shadow: var(--shadow-light);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .user-profile:hover {
+            background: white;
+            box-shadow: var(--shadow-medium);
+            transform: translateY(-1px);
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: var(--primary-gradient);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            box-shadow: var(--shadow-light);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .user-avatar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+
+        .user-profile:hover .user-avatar::before {
+            left: 100%;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .user-name {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 0.9rem;
+        }
+
+        .user-role {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            background: #22c55e;
+            border-radius: 50%;
+            position: absolute;
+            bottom: 6px;
+            right: 6px;
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+
+        .content-area {
+            padding: 35px;
+            min-height: calc(100vh - 100px);
+            position: relative; /* Added to position iframe container */
+            overflow: hidden; /* Prevent overflow issues */
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: 100%; /* Fill the content-area height */
+            position: absolute;
+            top: 0;
+            left: 0;
+            border: none;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%; /* Fill the container height */
+            border: none;
+        }
+
+        /* Mobile Menu Toggle */
+        .menu-toggle {
+            display: none;
+            width: 45px;
+            height: 45px;
+            border: none;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .menu-toggle:hover {
+            background: var(--accent-gradient);
+            color: white;
+            transform: rotate(90deg);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                width: 240px;
+            }
+            
+            .main-content {
+                margin-left: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .sidebar {
+                transform: translateX(-100%);
+                width: 240px;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .top-bar {
+                padding: 15px 20px;
+            }
+
+            .content-area {
+                padding: 20px;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .user-info {
+                display: none;
+            }
+
+            .top-actions {
+                gap: 12px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .sidebar {
+                width: 100vw;
+            }
+            
+            .top-bar {
+                padding: 12px 15px;
+            }
+            
+            .content-area {
+                padding: 15px;
+            }
+            
+            .page-title {
+                font-size: 1.3rem;
+            }
+            
+            .user-profile {
+                padding: 8px 12px;
+                gap: 8px;
+            }
+            
+            .user-avatar {
+                width: 36px;
+                height: 36px;
+            }
+
+            .action-btn {
+                width: 40px;
+                height: 40px;
+            }
+        }
+
+        /* Sidebar Overlay for Mobile */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .sidebar-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        /* Enhanced Focus States */
+        .nav-item:focus,
+        .action-btn:focus,
+        .menu-toggle:focus,
+        .user-profile:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+
+        /* Loading Animation */
+        .loading-shimmer {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+    
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-container">
+                    <div class="logo">
+                        <img src="../Company logo.png" alt="Company Logo" class="company-logo">
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <i class="fas fa-home"></i>
+                    Overview
+                </div>
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                    <span class="nav-badge">Live</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-users"></i>
+                    Team Members
+                    <span class="nav-badge">24</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-chart-line"></i>
+                    Performance
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-bullseye"></i>
+                    Goals & OKRs
+                    <span class="nav-badge">8</span>
+                </a>
+
+                <div class="nav-section">
+                    <i class="fas fa-chart-bar"></i>
+                    Analytics
+                </div>
+                <a href="../Analysis report/Week.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    Weekly Analytics
+                </a>
+                <a href="../Analysis report/month.html" class="nav-item">
+                    <i class="fas fa-chart-pie"></i>
+                    Monthly Analytics
+                </a>
+                
+                <a href="../Analysis report/custom.html" class="nav-item">
+                    <i class="fas fa-file-contract"></i>
+                    Custom Rage 
+                    <span class="nav-badge">New</span>
+                </a>
+
+                <div class="nav-section">
+                    <i class="fas fa-cogs"></i>
+                    Management
+                </div>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-user-plus"></i>
+                    Onboarding
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    Learning Hub
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-comments"></i>
+                    Feedback
+                    <span class="nav-badge">3</span>
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-star"></i>
+                    Recognition
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-sliders-h"></i>
+                    Settings
+                </a>
+            </nav>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="top-bar">
+                <div class="page-header">
+                    <div class="page-title">Performance Dashboard</div>
+                    <div class="page-subtitle">Monitor your team's progress and achievements</div>
+                </div>
+                
+                <div class="top-actions">
+                    <button class="action-btn" title="Notifications">
+                        <i class="fas fa-bell"></i>
+                        <div class="notification-badge"></div>
+                    </button>
+                    
+                    <button class="action-btn" title="Messages">
+                        <i class="fas fa-envelope"></i>
+                    </button>
+                    
+                    <button class="action-btn" title="Quick Actions">
+                        <i class="fas fa-plus"></i>
+                    </button>
+
+                    <div class="user-profile">
+                        <div class="user-avatar">
+                            JD
+                            <div class="status-indicator"></div>
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">User</div>
+                            <div class="user-role">HR Manager</div>
+                        </div>
+                    </div>
+
+                    <button class="menu-toggle" onclick="toggleSidebar()">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <div class="iframe-container">
+                    <iframe src="../New dash/iframe 2.html" title="Dashboard Content" id="contentIframe"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('active');
+        }
+
+        // Close sidebar when clicking overlay
+        document.getElementById('sidebarOverlay').addEventListener('click', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('open');
+            overlay.classList.remove('active');
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (window.innerWidth > 768) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+        });
+
+        // Enhanced keyboard navigation
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const sidebar = document.getElementById('sidebar');
+                const overlay = document.getElementById('sidebarOverlay');
+                
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    overlay.classList.remove('active');
+                }
+            }
+        });
+
+        // Smooth scroll and iframe navigation for analytics items
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                
+                // Remove active class from all items
+                document.querySelectorAll('.nav-item').forEach(navItem => {
+                    navItem.classList.remove('active');
+                });
+                
+                // Add active class to clicked item
+                this.classList.add('active');
+
+                // Update iframe src based on analytics items
+                const iframe = document.getElementById('contentIframe');
+                if (this.textContent.includes('Weekly Analytics')) {
+                    iframe.src = '../Analysis report/Week .html';
+                } else if (this.textContent.includes('Monthly Analytics')) {
+                    iframe.src = '../Analysis report/month.html';
+                } else if (this.textContent.includes('Custom Rage')) {
+                    iframe.src = '../Analysis report/custom.html';
+                }
+            });
+        });
+
+        // Add loading states for better UX
+        function showLoading(element) {
+            element.classList.add('loading-shimmer');
+        }
+
+        function hideLoading(element) {
+            element.classList.remove('loading-shimmer');
+        }
+
+        // Initialize tooltips and enhance UX
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add any initialization code here
+            console.log('Dashboard initialized successfully');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Report Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.03) 10px,
+                rgba(255, 255, 255, 0.03) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .controls {
+            padding: 20px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex: 1;
+            flex-wrap: nowrap;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: #495057;
+            white-space: nowrap;
+            font-size: 14px;
+        }
+
+        .filter-select, .date-input {
+            padding: 8px 12px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            transition: all 0.3s ease;
+            width: 150px;
+            height: 36px;
+        }
+
+        .filter-select:focus, .date-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .report-content {
+            padding: 30px;
+            min-height: 400px;
+        }
+
+        .employee-section {
+            margin-bottom: 40px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .employee-section:hover {
+            transform: translateY(-2px);
+        }
+
+        .employee-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .employee-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 5px;
+        }
+
+        .employee-info p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+        }
+
+        .week-info {
+            text-align: right;
+        }
+
+        .week-info .week-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .week-info .week-date {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            overflow-y: auto;
+            background: white;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .table-container::-webkit-scrollbar {
+            display: none;
+        }
+
+        .report-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .report-table th {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            color: #495057;
+            font-weight: 600;
+            padding: 15px 12px;
+            text-align: left;
+            border-bottom: 2px solid #dee2e6;
+            white-space: nowrap;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .report-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f1f3f4;
+            vertical-align: top;
+            transition: background-color 0.2s ease;
+        }
+
+        .report-table tr:hover td {
+            background-color: #f8f9fa;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .status-completed {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-pending {
+            background: #f8d7da;
+            color: #721c24
+        }
+
+        .project-status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .project-active {
+            background: #28a745;
+            color: white;
+        }
+
+        .project-review {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .project-completed {
+            background: #6c757d;
+            color: white;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+
+        .tech-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+
+        .hours-cell {
+            text-align: center;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .date-cell {
+            font-weight: 600;
+            color: #6c757d;
+            min-width: 100px;
+        }
+
+        .activity-cell {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .description-cell {
+            max-width: 250px;
+            line-height: 1.4;
+            color: #6c757d;
+        }
+
+        .summary-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #495057;
+        }
+
+        .summary-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #495057;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 1024px) {
+            .filter-group {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .filter-select, .date-input {
+                width: 120px;
+            }
+
+            .generate-btn {
+                min-width: 120px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+
+            .filter-select, .date-input {
+                width: 100%;
+            }
+
+            .generate-btn {
+                width: 100%;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .employee-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 10px;
+            }
+
+            .week-info {
+                text-align: center;
+            }
+
+            .report-table {
+                font-size: 12px;
+            }
+
+            .report-table th,
+            .report-table td {
+                padding: 8px 6px;
+            }
+
+            .summary-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .generate-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+            height: 36px;
+            line-height: 20px;
+        }
+
+        .generate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        }
+
+        .generate-btn:active {
+            transform: translateY(0);
+        }
+
+        .generate-btn:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .no-data-message {
+            background: #fff3cd;
+            color: #856404;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 16px;
+            margin: 20px 0;
+            border: 1px solid #ffeea7;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        .status-select {
+            padding: 6px;
+            border-radius: 5px;
+            border: 2px solid #dee2e6;
+            background: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .status-select option[value="Completed"] {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-select option[value="In Progress"] {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-select option[value="Pending"] {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Custom Report Management System</h1>
+            <p>Track progress, monitor activities, and manage team productivity</p>
+        </div>
+
+        <div class="controls">
+            <div class="filter-group">
+                <label for="employeeId">ID:</label>
+                <input type="text" id="employeeId" class="filter-select" placeholder="Employee ID">
+                <label for="employeeName">Name:</label>
+                <input type="text" id="employeeName" class="filter-select" placeholder="Employee Name" readonly>
+                <label for="startDate">Start:</label>
+                <input type="date" id="startDate" class="date-input">
+                <label for="endDate">End:</label>
+                <input type="date" id="endDate" class="date-input">
+                <button id="generateReport" class="generate-btn">Generate</button>
+            </div>
+        </div>
+
+        <div class="report-content">
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Loading reports...</p>
+            </div>
+            <div id="reportContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data for demonstration with Employee IDs
+        const reportData = {
+            'E001': {
+                id: 'E001',
+                name: 'John Doe',
+                manager: 'Alice Smith',
+                reports: [
+                    {
+                        date: '2025-06-23',
+                        project: 'E-Commerce Platform',
+                        activity: 'Frontend Development',
+                        type: 'Development',
+                        description: 'Implemented shopping cart functionality with React hooks and Redux state management',
+                        technologies: ['React', 'Redux', 'TypeScript'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Successfully completed all planned features'
+                    },
+                    {
+                        date: '2025-06-24',
+                        project: 'E-Commerce Platform',
+                        activity: 'API Integration',
+                        type: 'Development',
+                        description: 'Integrated payment gateway APIs and implemented error handling mechanisms',
+                        technologies: ['React', 'Axios', 'Stripe API'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Payment integration working smoothly'
+                    },
+                    {
+                        date: '2025-06-25',
+                        project: 'E-Commerce Platform',
+                        activity: 'Testing & Debugging',
+                        type: 'Testing',
+                        description: 'Conducted unit testing and fixed responsive design issues on mobile devices',
+                        technologies: ['Jest', 'React Testing Library'],
+                        hoursSpent: 6,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Minor responsive issues identified and being fixed'
+                    },
+                    {
+                        date: '2025-06-26',
+                        project: 'Admin Dashboard',
+                        activity: 'UI Design Implementation',
+                        type: 'Development',
+                        description: 'Created responsive dashboard layout with data visualization components',
+                        technologies: ['React', 'Chart.js', 'Material-UI'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'Dashboard ready for client review'
+                    },
+                    {
+                        date: '2025-06-27',
+                        project: 'Admin Dashboard',
+                        activity: 'Data Integration',
+                        type: 'Development',
+                        description: 'Connected dashboard to backend APIs and implemented real-time data updates',
+                        technologies: ['React', 'Socket.io', 'REST API'],
+                        hoursSpent: 7,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'Real-time updates working, optimizing performance'
+                    }
+                ]
+            },
+            'E002': {
+                id: 'E002',
+                name: 'Sarah Johnson',
+                manager: 'Robert Brown',
+                reports: [
+                    {
+                        date: '2025-06-23',
+                        project: 'Mobile App Development',
+                        activity: 'UI/UX Design',
+                        type: 'Design',
+                        description: 'Created wireframes and prototypes for user onboarding flow',
+                        technologies: ['Figma', 'Adobe XD'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Design approved by stakeholders'
+                    },
+                    {
+                        date: '2025-06-24',
+                        project: 'Mobile App Development',
+                        activity: 'React Native Development',
+                        type: 'Development',
+                        description: 'Implemented authentication screens with biometric login support',
+                        technologies: ['React Native', 'Firebase Auth'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Authentication module completed successfully'
+                    },
+                    {
+                        date: '2025-06-25',
+                        project: 'Mobile App Development',
+                        activity: 'Navigation Setup',
+                        type: 'Development',
+                        description: 'Configured navigation stack and implemented deep linking functionality',
+                        technologies: ['React Navigation', 'React Native'],
+                        hoursSpent: 6,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Navigation working, testing deep links'
+                    },
+                    {
+                        date: '2025-06-26',
+                        project: 'API Development',
+                        activity: 'Backend Services',
+                        type: 'Development',
+                        description: 'Developed RESTful APIs for user management and data synchronization',
+                        technologies: ['Node.js', 'Express', 'MongoDB'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'All API endpoints tested and documented'
+                    },
+                    {
+                        date: '2025-06-27',
+                        project: 'Database Optimization',
+                        activity: 'Performance Tuning',
+                        type: 'Optimization',
+                        description: 'Optimized database queries and implemented caching mechanisms',
+                        technologies: ['MongoDB', 'Redis', 'Node.js'],
+                        hoursSpent: 7,
+                        status: 'In Progress',
+                        projectStatus: 'Review',
+                        remarks: 'Performance improved by 40%'
+                    }
+                ]
+            },
+            'E003': {
+                id: 'E003',
+                name: 'Mike Chen',
+                manager: 'Lisa Wang',
+                reports: [
+                    {
+                        date: '2025-06-23',
+                        project: 'Data Analytics Platform',
+                        activity: 'Data Pipeline Development',
+                        type: 'Development',
+                        description: 'Built ETL pipeline for processing large datasets from multiple sources',
+                        technologies: ['Python', 'Apache Airflow', 'PostgreSQL'],
+                        hoursSpent: 8,
+                        status: 'Completed',
+                        projectStatus: 'Active',
+                        remarks: 'Pipeline processing 1M+ records daily'
+                    },
+                    {
+                        date: '2025-06-24',
+                        project: 'Data Analytics Platform',
+                        activity: 'Machine Learning Model',
+                        type: 'Development',
+                        description: 'Developed predictive analytics model for customer behavior analysis',
+                        technologies: ['Python', 'Scikit-learn', 'Pandas'],
+                        hoursSpent: 9,
+                        status: 'In Progress',
+                        projectStatus: 'Active',
+                        remarks: 'Model accuracy at 92%, fine-tuning'
+                    },
+                    {
+                        date: '2025-06-25',
+                        project: 'Data Visualization',
+                        activity: 'Dashboard Creation',
+                        type: 'Development',
+                        description: 'Created interactive dashboards for business intelligence reporting',
+                        technologies: ['Tableau', 'D3.js', 'React'],
+                        hoursSpent: 7,
+                        status: 'Completed',
+                        projectStatus: 'Review',
+                        remarks: 'Dashboards ready for review'
+                    },
+                    {
+                        date: '2025-06-26',
+                        project: 'Cloud Migration',
+                        activity: 'Infrastructure Setup',
+ type: 'DevOps',
+                        description: 'Migrated to AWS cloud services',
+                            technologies: ['AWS', 'Docker', 'Kubernetes'],
+                            hoursSpent: 8,
+                            status: 'In Progress',
+                            projectStatus: 'Active',
+                            remarks: 'Migration 70% complete'
+                        },
+                        {
+                            date: '2025-06-27',
+                            project: 'API Gateway',
+                            activity: 'Microservices Architecture',
+                            type: 'Framework',
+                            description: 'Implemented microservices architecture with gateway',
+                            technologies: ['Node.js', 'Docker', 'Kong'],
+                            hoursSpent: 8,
+                            status: 'Completed',
+                            projectStatus: 'Active',
+                            remarks: 'Architecture implemented successfully'
+                        }
+                    ]
+                }
+            };
+
+            // Initialize the application
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeDateSelectors();
+                setupEventListeners();
+                showInitialMessage();
+            });
+
+            function showInitialMessage() {
+                const container = document.getElementById('reportContainer');
+                container.innerHTML = `
+                    <div class="no-data-message">
+                        <h3>Welcome to Weekly Report System</h3>
+                        <p>Enter an Employee ID, select start and end dates, and click "Generate" to view reports.</p>
+                        <p><strong>Available IDs:</strong> E001, E002, E003</p>
+                    </div>
+                `;
+            }
+
+            function initializeDateSelectors() {
+                const startDateInput = document.getElementById('startDate');
+                const endDateInput = document.getElementById('endDate');
+                const today = new Date();
+                const formattedDate = today.toISOString().split('T')[0];
+                startDateInput.value = formattedDate;
+                endDateInput.value = formattedDate;
+            }
+
+            function setupEventListeners() {
+                const employeeIdInput = document.getElementById('employeeId');
+                const employeeNameInput = document.getElementById('employeeName');
+                const generateBtn = document.getElementById('generateReport');
+
+                employeeIdInput.addEventListener('input', function() {
+                    const employeeId = this.value.trim().toUpperCase();
+                    if (employeeId && reportData[employeeId]) {
+                        employeeNameInput.value = reportData[employeeId].name;
+                    } else {
+                        employeeNameInput.value = '';
+                    }
+                });
+
+                generateBtn.addEventListener('click', generateReport);
+
+                employeeIdInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        generateReport();
+                    }
+                });
+            }
+
+            function showLoading() {
+                document.getElementById('loading').style.display = 'flex';
+                document.getElementById('reportContainer').style.display = 'none';
+            }
+
+            function hideLoading() {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('reportContainer').style.display = 'block';
+            }
+
+            function generateReport() {
+                const employeeId = document.getElementById('employeeId').value.trim().toUpperCase();
+                const startDate = document.getElementById('startDate').value;
+                const endDate = document.getElementById('endDate').value;
+                const container = document.getElementById('reportContainer');
+
+                // Clear previous content
+                container.innerHTML = '';
+
+                // Validation
+                if (!employeeId) {
+                    container.innerHTML = '<div class="error-message"><strong>Error:</strong> Please enter an Employee ID</div>';
+                    return;
+                }
+
+                if (!startDate || !endDate) {
+                    container.innerHTML = '<div class="error-message"><strong>Error:</strong> Please select both start and end dates</div>';
+                    return;
+                }
+
+                if (new Date(startDate) > new Date(endDate)) {
+                    container.innerHTML = '<div class="error-message"><strong>Error:</strong> Start date cannot be after end date</div>';
+                    return;
+                }
+
+                if (!reportData[employeeId]) {
+                    container.innerHTML = `
+                        <div class="error-message">
+                            <strong>Error:</strong> Employee ID "${employeeId}" not found<br>
+                            <small>Available IDs: E001, E002, E003</small>
+                        </div>
+                    `;
+                    return;
+                }
+
+                showLoading();
+
+                setTimeout(() => {
+                    const employee = reportData[employeeId];
+                    const reportHtml = generateEmployeeReport(employeeId, employee, startDate, endDate);
+                    container.innerHTML = reportHtml || '<div class="no-data-message">No reports found for the selected date range</div>';
+                    setupStatusChangeListeners(employeeId);
+                    hideLoading();
+                }, 800);
+            }
+
+            function setupStatusChangeListeners(employeeId) {
+                const statusSelects = document.querySelectorAll('.status-select');
+                statusSelects.forEach((select, index) => {
+                    select.addEventListener('change', function() {
+                        reportData[employeeId].reports[index].status = this.value;
+                        const startDate = document.getElementById('startDate').value;
+                        const endDate = document.getElementById('endDate').value;
+                        const employee = reportData[employeeId];
+                        const reportHtml = generateEmployeeReport(employeeId, employee, startDate, endDate);
+                        document.getElementById('reportContainer').innerHTML = reportHtml;
+                        setupStatusChangeListeners(employeeId);
+                    });
+                });
+            }
+
+            function generateEmployeeReport(employeeId, employee, startDate, endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                let totalHours = 0;
+                let completedTasks = 0;
+                let inProgressTasks = 0;
+                let pendingTasks = 0;
+
+                const tableRows = employee.reports
+                    .filter(report => {
+                        const reportDate = new Date(report.date);
+                        return reportDate >= start && reportDate <= end;
+                    })
+                    .map((report, index) => {
+                        totalHours += report.hoursSpent;
+                        if (report.status === 'Completed') completedTasks++;
+                        else if (report.status === 'In Progress') inProgressTasks++;
+                        else if (report.status === 'Pending') pendingTasks++;
+
+                        return `
+                            <tr>
+                                <td class="date-cell">${new Date(report.date).toLocaleDateString()}</td>
+                                <td><strong>${report.project}</strong></td>
+                                <td>${employee.manager}</td>
+                                <td class="activity-cell">${report.activity}</td>
+                                <td>${report.type}</td>
+                                <td class="description-cell">${report.description}</td>
+                                <td>
+                                    <div class="tech-tags">
+                                        ${report.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                                    </div>
+                                </td>
+                                <td class="hours-cell">${report.hoursSpent}h</td>
+                                <td>
+                                    <select class="status-select" data-index="${index}">
+                                        <option value="Completed" ${report.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                                        <option value="In Progress" ${report.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                        <option value="Pending" ${report.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                    </select>
+                                </td>
+                                <td><span class="project-status-badge project-${report.projectStatus.toLowerCase()}">${report.projectStatus}</span></td>
+                                <td>${report.remarks}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                if (!tableRows) {
+                    return '';
+                }
+
+                return `
+                    <div class="employee-section">
+                        <div class="employee-header">
+                            <div class="employee-info">
+                                <h3>${employee.name}</h3>
+                                <p>Reporting Manager: ${employee.manager}</p>
+                            </div>
+                            <div class="week-info">
+                                <div class="week-label">Date Range</div>
+                                <div class="week-date">${start.toLocaleDateString()} - ${end.toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                        <div class="table-container">
+                            <table class="report-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Project</th>
+                                        <th>Reporting Manager</th>
+                                        <th>Activity</th>
+                                        <th>Type</th>
+                                        <th>Description</th>
+                                        <th>Technologies</th>
+                                        <th>Hours Spent</th>
+                                        <th>Status</th>
+                                        <th>Project Status</th>
+                                        <th>Remarks</th>
+                                    </tr>
+                                </thead>
+                                <tbody>${tableRows}</tbody>
+                            </table>
+                        </div>
+                        <div class="summary-card">
+                            <h4>Summary for ${employee.name}</h4>
+                            <div class="summary-stats">
+                                <div class="stat-item">
+                                    <div class="stat-value">${totalHours}</div>
+                                    <div class="stat-label">Hours Spent</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${completedTasks}</div>
+                                    <div class="stat-label">Completed</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${inProgressTasks}</div>
+                                    <div class="stat-label">In Progress</div>
+                                </div>
+                                <div class="stat-item">
+                                    <div class="stat-value">${pendingTasks}</div>
+                                    <div class="stat-label">Pending</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        </script>
+    </body>
+</html>

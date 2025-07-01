@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Performance Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+            padding: 30px 40px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="rgba(255,255,255,0.1)"/><circle cx="75" cy="75" r="1" fill="rgba(255,255,255,0.1)"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-20px, -20px) rotate(180deg); }
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: #64748b;
+            position: relative;
+            z-index: 1;
+        }
+
+        .search-section {
+            padding: 40px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .search-container {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .input-group {
+            position: relative;
+            min-width: 250px;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            font-size: 16px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .input-group input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .search-btn {
+            padding: 16px 32px;
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .search-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .employee-info {
+            padding: 30px 40px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+            border-bottom: 1px solid #e2e8f0;
+            display: none;
+        }
+
+        .employee-card {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .employee-card h2 {
+            font-size: 1.8rem;
+            color: #1e293b;
+            margin-bottom: 10px;
+        }
+
+        .employee-card p {
+            color: #64748b;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+
+        .week-selector {
+            padding: 30px 40px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+            display: none;
+        }
+
+        .week-controls {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .week-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .week-btn:hover, .week-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .current-week {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 12px;
+        }
+
+        .week-dropdown {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: #1e293b;
+            font-size: 1rem;
+        }
+
+        .week-dropdown:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .reports-section {
+            padding: 40px;
+            display: none;
+        }
+
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .project-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .project-card.status-complete {
+            background: linear-gradient(135deg, rgba(209, 250, 229, 0.9) 0%, rgba(209, 250, 229, 0.7) 100%);
+        }
+
+        .project-card.status-incomplete {
+            background: linear-gradient(135deg, rgba(254, 243, 199, 0.9) 0%, rgba(254, 243, 199, 0.7) 100%);
+        }
+
+        .project-card.status-pending {
+            background: linear-gradient(135deg, rgba(254, 202, 202, 0.9) 0%, rgba(254, 202, 202, 0.7) 100%);
+        }
+
+        .project-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #1d4ed8, #059669, #0891b2);
+            border-radius: 20px 20px 0 0;
+        }
+
+        .project-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 45px rgba(0, 0, 0, 0.15);
+        }
+
+        .project-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+
+        .project-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 5px;
+        }
+
+        .project-domain {
+            display: inline-block;
+            padding: 6px 12px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .project-details {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .detail-label {
+            font-weight: 600;
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+
+        .detail-value {
+            color: #1e293b;
+            font-weight: 500;
+        }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tech-tag {
+            padding: 4px 10px;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-dropdown {
+            padding: 8px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            background: white;
+            color: #1e293b;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        .status-dropdown:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .status-complete { background: linear-gradient(135deg, #10b981, #059669); color: white; }
+        .status-incomplete { background: linear-gradient(135deg, #f59e0b, #d97706); color: white; }
+        .status-pending { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+
+        .remarks-area {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .remarks-area:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .modules-section {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 2px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .modules-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .module-item {
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 12px;
+            border-left: 4px solid #3b82f6;
+            transition: all 0.3s ease;
+        }
+
+        .module-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .module-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .module-name {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .module-progress {
+            font-size: 0.9rem;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .add-module-btn {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            color: #1e293b;
+            border: 2px solid #cbd5e1;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin-top: 15px;
+        }
+
+        .add-module-btn:hover {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .save-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            border: none;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 30px rgba(59, 130, 246, 0.4);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #64748b;
+            font-size: 1.1rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 16px;
+            }
+            
+            .header {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .projects-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+            
+            .project-card {
+                padding: 20px;
+            }
+            
+            .search-container {
+                flex-direction: column;
+            }
+            
+            .input-group {
+                min-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Employee Performance Analytics</h1>
+            <p>Comprehensive weekly performance tracking and project management system</p>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <div class="input-group">
+                    <input type="text" id="employeeId" placeholder="Enter Employee ID (e.g., EMP001)">
+                </div>
+                <button class="search-btn" onclick="searchEmployee()">Search Employee</button>
+            </div>
+        </div>
+
+        <div class="employee-info" id="employeeInfo">
+            <div class="employee-card">
+                <h2 id="employeeName">Employee Name</h2>
+                <p id="employeeRole"><strong>Role:</strong> Department</p>
+                <p id="employeeDesignation"><strong>Designation:</strong> Position</p>
+                <p id="employeeManager"><strong>Reporting Manager:</strong> Manager Name</p>
+            </div>
+        </div>
+
+        <div class="week-selector" id="weekSelector">
+            <div class="week-controls">
+                <button class="week-btn" onclick="changeWeek(-1)">← Previous</button>
+                <select class="week-dropdown" id="weekDropdown" onchange="selectWeek()">
+                    <option value="1">Week 1</option>
+                    <option value="2">Week 2</option>
+                    <option value="3">Week 3</option>
+                    <option value="4">Week 4</option>
+                </select>
+                <button class="week-btn" onclick="changeWeek(1)">Next →</button>
+            </div>
+        </div>
+
+        <div class="reports-section" id="reportsSection">
+            <div class="projects-grid" id="projectsGrid">
+                <!-- Projects will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Demo data
+        const employeeData = {
+            'EMP001': {
+                name: 'Sarah Johnson',
+                department: 'Frontend Development',
+                position: 'Senior Developer',
+                manager: 'John Smith',
+                projects: {
+                    1: [
+                        {
+                            id: 1,
+                            name: 'E-Commerce Platform Redesign',
+                            domain: 'Web Development',
+                            technologies: ['React', 'Node.js', 'MongoDB', 'AWS'],
+                            status: 'Complete',
+                            remarks: 'Successfully delivered the new responsive design with improved user experience. All modules tested and deployed.',
+                            modules: [
+                                { name: 'User Authentication', progress: '100%', status: 'Complete' },
+                                { name: 'Product Catalog', progress: '100%', status: 'Complete' },
+                                { name: 'Payment Gateway', progress: '100%', status: 'Complete' },
+                                { name: 'Order Management', progress: '100%', status: 'Complete' }
+                            ]
+                        },
+                        {
+                            id: 2,
+                            name: 'Mobile App API Integration',
+                            domain: 'Mobile Development',
+                            technologies: ['Flutter', 'Firebase', 'REST API'],
+                            status: 'Incomplete',
+                            remarks: 'API integration in progress. Facing some challenges with real-time data synchronization.',
+                            modules: [
+                                { name: 'User Profile API', progress: '85%', status: 'In Progress' },
+                                { name: 'Notifications Service', progress: '60%', status: 'In Progress' },
+                                { name: 'Data Sync Module', progress: '40%', status: 'Pending' }
+                            ]
+                        }
+                    ],
+                    2: [
+                        {
+                            id: 3,
+                            name: 'Dashboard Analytics',
+                            domain: 'Data Visualization',
+                            technologies: ['D3.js', 'Python', 'PostgreSQL'],
+                            status: 'Pending',
+                            remarks: 'Requirements gathering completed. Design phase initiated.',
+                            modules: [
+                                { name: 'Data Collection', progress: '30%', status: 'In Progress' },
+                                { name: 'Chart Components', progress: '10%', status: 'Pending' },
+                                { name: 'Real-time Updates', progress: '0%', status: 'Pending' }
+                            ]
+                        }
+                    ]
+                }
+            },
+            'EMP002': {
+                name: 'Michael Chen',
+                department: 'Backend Development',
+                position: 'Lead Developer',
+                manager: 'Lisa Brown',
+                projects: {
+                    1: [
+                        {
+                            id: 4,
+                            name: 'Microservices Architecture',
+                            domain: 'System Architecture',
+                            technologies: ['Java', 'Spring Boot', 'Docker', 'Kubernetes'],
+                            status: 'Complete',
+                            remarks: 'Successfully migrated monolithic application to microservices. Performance improved by 40%.',
+                            modules: [
+                                { name: 'User Service', progress: '100%', status: 'Complete' },
+                                { name: 'Order Service', progress: '100%', status: 'Complete' },
+                                { name: 'Notification Service', progress: '100%', status: 'Complete' }
+                            ]
+                        }
+                    ],
+                    2: [
+                        {
+                            id: 5,
+                            name: 'Database Optimization',
+                            domain: 'Database Management',
+                            technologies: ['PostgreSQL', 'Redis', 'Elasticsearch'],
+                            status: 'Incomplete',
+                            remarks: 'Query optimization ongoing. Redis caching implementation in progress.',
+                            modules: [
+                                { name: 'Query Optimization', progress: '70%', status: 'In Progress' },
+                                { name: 'Cache Implementation', progress: '50%', status: 'In Progress' },
+                                { name: 'Performance Testing', progress: '20%', status: 'Pending' }
+                            ]
+                        }
+                    ]
+                }
+            },
+            'EMP003': {
+                name: 'Emily Rodriguez',
+                department: 'DevOps',
+                position: 'DevOps Engineer',
+                manager: 'Robert Wilson',
+                projects: {
+                    1: [
+                        {
+                            id: 6,
+                            name: 'CI/CD Pipeline Setup',
+                            domain: 'Infrastructure',
+                            technologies: ['Jenkins', 'Docker', 'AWS', 'Terraform'],
+                            status: 'Complete',
+                            remarks: 'Automated deployment pipeline established. Reduced deployment time by 60%.',
+                            modules: [
+                                { name: 'Build Automation', progress: '100%', status: 'Complete' },
+                                { name: 'Testing Pipeline', progress: '100%', status: 'Complete' },
+                                { name: 'Deployment Scripts', progress: '100%', status: 'Complete' }
+                            ]
+                        }
+                    ]
+                }
+            }
+        };
+
+        let currentEmployee = null;
+        let currentWeek = 1;
+
+        function searchEmployee() {
+            const employeeId = document.getElementById('employeeId').value.trim().toUpperCase();
+            
+            if (!employeeId) {
+                alert('Please enter an Employee ID');
+                return;
+            }
+
+            const employee = employeeData[employeeId];
+            
+            if (!employee) {
+                alert('Employee not found. Try EMP001, EMP002, or EMP003');
+                return;
+            }
+
+            currentEmployee = { id: employeeId, ...employee };
+            displayEmployeeInfo(employee);
+            displayWeekSelector();
+            displayProjects();
+        }
+
+        function displayEmployeeInfo(employee) {
+            document.getElementById('employeeName').textContent = employee.name;
+            document.getElementById('employeeRole').innerHTML = `<strong>Role:</strong> ${employee.department}`;
+            document.getElementById('employeeDesignation').innerHTML = `<strong>Designation:</strong> ${employee.position}`;
+            document.getElementById('employeeManager').innerHTML = `<strong>Reporting Manager:</strong> ${employee.manager}`;
+            document.getElementById('employeeInfo').style.display = 'block';
+        }
+
+        function displayWeekSelector() {
+            document.getElementById('weekSelector').style.display = 'block';
+            updateWeekDisplay();
+        }
+
+        function updateWeekDisplay() {
+            document.getElementById('weekDropdown').value = currentWeek;
+        }
+
+        function changeWeek(direction) {
+            const newWeek = currentWeek + direction;
+            if (newWeek >= 1 && newWeek <= 4) {
+                currentWeek = newWeek;
+                updateWeekDisplay();
+                displayProjects();
+            }
+        }
+
+        function selectWeek() {
+            currentWeek = parseInt(document.getElementById('weekDropdown').value);
+            displayProjects();
+        }
+
+        function displayProjects() {
+            const projectsGrid = document.getElementById('projectsGrid');
+            const reportsSection = document.getElementById('reportsSection');
+            
+            if (!currentEmployee || !currentEmployee.projects[currentWeek]) {
+                projectsGrid.innerHTML = '<div class="no-data">No projects found for this week.</div>';
+                reportsSection.style.display = 'block';
+                return;
+            }
+
+            const projects = currentEmployee.projects[currentWeek];
+            
+            projectsGrid.innerHTML = projects.map(project => `
+                <div class="project-card status-${project.status.toLowerCase()}">
+                    <div class="project-header">
+                        <div>
+                            <div class="project-title">${project.name}</div>
+                            <div class="project-domain">${project.domain}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="project-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Technologies:</span>
+                            <div class="tech-tags">
+                                ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                            </div>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Status:</span>
+                            <select class="status-dropdown status-${project.status.toLowerCase()}" 
+                                    onchange="updateProjectStatus(${project.id}, this.value)">
+                                <option value="Complete" ${project.status === 'Complete' ? 'selected' : ''}>Complete</option>
+                                <option value="Incomplete" ${project.status === 'Incomplete' ? 'selected' : ''}>Incomplete</option>
+                                <option value="Pending" ${project.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                            </select>
+                        </div>
+                        
+                        <div class="detail-row">
+                            <span class="detail-label">Remarks:</span>
+                        </div>
+                        <textarea class="remarks-area" placeholder="Add your remarks here..." 
+                                  onchange="updateProjectRemarks(${project.id}, this.value)">${project.remarks}</textarea>
+                    </div>
+                    
+                    <div class="modules-section">
+                        <div class="modules-title">
+                            📋 Module Progress
+                        </div>
+                        <div id="modules-${project.id}">
+                            ${project.modules.map((module, index) => `
+                                <div class="module-item">
+                                    <div class="module-header">
+                                        <span class="module-name">${module.name}</span>
+                                        <span class="module-progress">${module.progress}</span>
+                                    </div>
+                                    <div style="font-size: 0.9rem; color: #666;">Status: ${module.status}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        <button class="add-module-btn" onclick="addModule(${project.id})">+ Add Module</button>
+                    </div>
+                    
+                    <button class="save-btn" onclick="saveProject(${project.id})">💾 Save Changes</button>
+                </div>
+            `).join('');
+            
+            reportsSection.style.display = 'block';
+        }
+
+        function updateProjectStatus(projectId, newStatus) {
+            const statusElement = event.target;
+            statusElement.className = `status-dropdown status-${newStatus.toLowerCase()}`;
+            
+            // Update the data
+            const projects = currentEmployee.projects[currentWeek];
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                project.status = newStatus;
+                displayProjects(); // Refresh to update background color
+            }
+        }
+
+        function updateProjectRemarks(projectId, newRemarks) {
+            const projects = currentEmployee.projects[currentWeek];
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                project.remarks = newRemarks;
+            }
+        }
+
+        function addModule(projectId) {
+            const moduleName = prompt('Enter module name:');
+            if (!moduleName) return;
+            
+            const progress = prompt('Enter progress percentage (e.g., 50):');
+            if (!progress) return;
+            
+            const status = prompt('Enter status (Pending/In Progress/Complete):') || 'Pending';
+            
+            const projects = currentEmployee.projects[currentWeek];
+            const project = projects.find(p => p.id === projectId);
+            if (project) {
+                project.modules.push({
+                    name: moduleName,
+                    progress: progress + '%',
+                    status: status
+                });
+                displayProjects(); // Refresh the display
+            }
+        }
+
+        function saveProject(projectId) {
+            // Simulate saving
+            const saveBtn = event.target;
+            const originalText = saveBtn.textContent;
+            saveBtn.textContent = '✅ Saved!';
+            saveBtn.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            
+            setTimeout(() => {
+                saveBtn.textContent = originalText;
+                saveBtn.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
